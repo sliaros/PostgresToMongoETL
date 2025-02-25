@@ -21,31 +21,24 @@ ssl:
   postgresql_conf : "C:/Program Files/PostgreSQL/17/data/postgresql.conf"
   pg_hba_conf : "C:/Program Files/PostgreSQL/17/data/pg_hba.conf"
 
-staging_database:
-  host: "localhost"
-  port: 5432
-  database: "building_energy_staging_db_v2"
-  user: "postgres"
-  password: "postgres"
-
-database:
+postgre_database:
   host: "localhost"
   port: 5432
   database: "building_energy_db_v2"
   user: "postgres"
   password: "postgres"
 
-default_database:
+postgre_default_database:
   host: "localhost"
   port: 5432
   database: "postgres"
   user: "postgres"
   password: "postgres"
 
-demo_database:
+mongo_db_datase:
   host: "localhost"
-  port: 5432
-  database: "demo_db"
-  user: "postgres"
-  password: "postgres"
+  port: 27017
+  database: "building_energy_db_v2"
+  user: "admin"
+  password: "admin"
 
