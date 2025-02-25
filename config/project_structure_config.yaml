@@ -23,10 +23,8 @@ project_structure:
     # Utility scripts: Tools for utility functions and helper classes
     utility:
     # Postgres managing
-    postgres_managing:
+    db_managing:
     # Schema generator
-    schema_generator:
-    # Configuration
     configuration_managing:
     # Logging
     logging_configuration:
