@@ -22,8 +22,10 @@ class Orchestrator:
         if not database_name:
             self._logger.info("No database selected, reverting to default database")
 
-    def load_config(self, config_files: list[str] = []):
+    def load_config(self, config_files=None):
         """Reloads the configuration if needed."""
+        if config_files is None:
+            config_files = []
         self.config_manager._load_configs(config_files)
         self.config_manager.validate_config()
         self._logger.info("Configuration reloaded successfully")
