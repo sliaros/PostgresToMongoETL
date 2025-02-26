@@ -3,7 +3,7 @@ import logging
 from typing import Dict, Any
 from pathlib import Path
 from src.logging_configuration.logging_config import setup_logging
-import os
+
 
 class ConfigManager:
     """Centralized configuration manager for handling YAML-based settings."""
@@ -165,7 +165,7 @@ class ConfigManager:
             - The "default_database" key is required for specifying the default database.
             - The "project_data" key is required for specifying the data used in the project.
         """
-        required_keys = ["default_database", "project_data"]
+        required_keys = ["postgre_database", "mongo_db_database", "project_data", "ssl"]
         try:
             for key in required_keys:
                 # Attempt to access the configuration value using the provided key.

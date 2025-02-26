@@ -35,10 +35,16 @@ postgre_default_database:
   user: "postgres"
   password: "postgres"
 
-mongo_db_datase:
+mongo_db_database:
   host: "localhost"
   port: 27017
   database: "building_energy_db_v2"
-  user: "admin"
-  password: "admin"
+
+mong_db_user:
+  admin:
+    username: "admin"
+    password: "admin"
+  user_user:
+    username: "user"
+    password: "user"
 
