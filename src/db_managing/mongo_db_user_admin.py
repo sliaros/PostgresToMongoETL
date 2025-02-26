@@ -1,31 +1,20 @@
 from typing import Optional, List, Dict, Any
 from pymongo import MongoClient, errors
-import logging
+from .mongodb_manager import MongoDBManager
 
 class MongoDBUserAdmin:
     """Class to manage MongoDB authentication users."""
-    def __init__(self, config):
-        self.config = config
-        self._logger = logging.getLogger(__name__)
-
-    def get_client(self) -> MongoClient:
-        """Get a MongoDB client."""
-        return MongoClient(self.config.get_connection_string())
+    def __init__(self, mongo_manager: MongoDBManager):
+        self.mongo_manager = mongo_manager
+        self._logger = mongo_manager._logger
 
     def user_exists(self, username: str, database_name: Optional[str] = None) -> bool:
         """
         Check if a MongoDB user exists.
-
-        Args:
-            username: Username to check
-            database_name: Database to check (defaults to auth_source)
-
-        Returns:
-            bool: True if user exists, False otherwise
         """
         try:
-            db_name = database_name or self.config.auth_source
-            client = self.get_client()
+            db_name = database_name or self.mongo_manager.config.auth_source
+            client = self.mongo_manager.get_client()
 
             # Use the usersInfo command to check if user exists
             result = client[db_name].command('usersInfo', {'user': username, 'db': db_name})
