@@ -2,6 +2,19 @@ from dataclasses import dataclass, field
 from typing import Optional, Dict, Any
 import bcrypt
 
+ROLE_PERMISSIONS = {
+    "superadmin": ["readWriteAnyDatabase", "userAdminAnyDatabase", "dbAdminAnyDatabase"],
+    "admin": ["readWrite", "userAdmin"],
+    "dataengineer": ["readWrite", "dbAdmin"],
+    "energyanalyst": ["read"],
+    "viewer": ["read"],
+    "sensormanager": ["readWrite"],
+    "facilitymanager": ["readWrite"],
+    "auditor": ["read"],
+    "mlmodeltrainer": ["read", "write"],
+    "apiclient": ["readWrite"],
+}
+
 @dataclass
 class User:
     """Dataclass to represent a user in the MongoDB database."""
@@ -54,3 +67,6 @@ class User:
             raise ValueError("Username cannot be empty")
         if not self.email:
             raise ValueError("Email cannot be empty")
+        if self.role not in ROLE_PERMISSIONS:
+            raise ValueError(f"Invalid role: {self.role}")
+        self.permissions = ROLE_PERMISSIONS[self.role]

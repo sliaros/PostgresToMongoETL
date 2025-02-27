@@ -3,6 +3,8 @@ from src.utility.file_utils import FileUtils
 import logging
 from typing import Dict, Any, List
 from src.db_managing.mongodb_manager import MongoDBManager, MongoDBConfig
+from src.db_managing.mongodb_user_manager import MongoDBUserManager
+from src.db_managing.mongodb_user_admin import MongoDBUserAdmin
 
 class Orchestrator:
 
@@ -25,8 +27,9 @@ class Orchestrator:
             raise ValueError("No database selected")
 
         self._mongo_db_config = MongoDBConfig(**self.config.get(database_name))
-
         self._mongo_db_manager = MongoDBManager(self._mongo_db_config)
+        self._mongo_user_manager = MongoDBUserManager(self._mongo_db_manager)
+        self._mongo_user_admin = MongoDBUserAdmin(self._mongo_db_manager)
 
     def load_config(self, config_files=None):
         """Reloads the configuration if needed."""
@@ -49,47 +52,65 @@ class Orchestrator:
             self._logger.error(f"Failed to load configuration: {e}")
             raise
 
-    def cleanup_collections_and_databases(self,
-                                          db_manager: MongoDBManager,
-                                          collections_to_delete: List[str] = None,
-                                          databases_to_delete: List[str] = None):
+    def cleanup_collections_and_databases(
+            self,
+            db_manager: MongoDBManager = None,
+            collections_to_delete: List[str] = None,
+            databases_to_delete: List[str] = None,
+            skip_system_databases: bool = True
+    ):
         """
         Utility function to clean up collections and databases.
 
         Args:
-            db_manager: The MongoDB manager instance
-            collections_to_delete: List of collection names to delete
-            databases_to_delete: List of database names to delete
+            db_manager: The MongoDB manager instance. If not provided, defaults to self._mongo_db_manager.
+            collections_to_delete: List of collection names to delete. If not provided, no collections are deleted.
+            databases_to_delete: List of database names to delete. If not provided, no databases are deleted.
+            skip_system_databases: If True, skips deletion of system databases (admin, config, local).
+
+        Raises:
+            ValueError: If neither db_manager nor self._mongo_db_manager is available.
+            Exception: If an error occurs during cleanup.
         """
-        logger.info("Starting cleanup of collections and databases")
-        client = db_manager.get_client() or self._db_manager.get_client()
+        self._logger.info("Starting cleanup of collections and databases")
 
-        # Delete specific collections if provided
-        if collections_to_delete:
-            db = db_manager.get_database()
-            existing_collections = db.list_collection_names()
+        # Ensure a MongoDB client is available
+        if db_manager is None and not hasattr(self, "_mongo_db_manager"):
+            raise ValueError("No MongoDB manager instance provided or available in the class.")
 
-            for collection_name in collections_to_delete:
-                if collection_name in existing_collections:
-                    logger.info(f"Dropping collection: {collection_name}")
-                    db.drop_collection(collection_name)
-                else:
-                    logger.info(f"Collection {collection_name} does not exist, skipping")
+        client = db_manager.get_client() if db_manager else self._mongo_db_manager.get_client()
 
-        # Delete specific databases if provided
-        if databases_to_delete:
-            existing_databases = client.list_database_names()
+        try:
+            # Delete specific collections if provided
+            if collections_to_delete:
+                db = db_manager.get_database() if db_manager else self._mongo_db_manager.get_database()
+                existing_collections = db.list_collection_names()
 
-            for db_name in databases_to_delete:
-                # Skip system databases
-                if db_name in ["admin", "config", "local"]:
-                    logger.warning(f"Skipping system database: {db_name}")
-                    continue
+                for collection_name in collections_to_delete:
+                    if collection_name in existing_collections:
+                        self._logger.info(f"Dropping collection: {collection_name}")
+                        db.drop_collection(collection_name)
+                    else:
+                        self._logger.info(f"Collection {collection_name} does not exist, skipping")
 
-                if db_name in existing_databases:
-                    logger.info(f"Dropping database: {db_name}")
-                    client.drop_database(db_name)
-                else:
-                    logger.info(f"Database {db_name} does not exist, skipping")
+            # Delete specific databases if provided
+            if databases_to_delete:
+                existing_databases = client.list_database_names()
 
-        logger.info("Cleanup completed")
+                for db_name in databases_to_delete:
+                    # Skip system databases if specified
+                    if skip_system_databases and db_name in ["admin", "config", "local"]:
+                        self._logger.warning(f"Skipping system database: {db_name}")
+                        continue
+
+                    if db_name in existing_databases:
+                        self._logger.info(f"Dropping database: {db_name}")
+                        client.drop_database(db_name)
+                    else:
+                        self._logger.info(f"Database {db_name} does not exist, skipping")
+
+            self._logger.info("Cleanup completed successfully")
+
+        except Exception as e:
+            self._logger.error(f"Error during cleanup: {str(e)}")
+            raise Exception(f"Cleanup failed: {str(e)}")

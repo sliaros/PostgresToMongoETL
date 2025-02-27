@@ -1,10 +1,9 @@
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict
-from mongodb_manager import MongoDBManager
-import bcrypt
-from mongodb_user import User
+from src.db_managing.mongodb_manager import MongoDBManager
+from src.db_managing.mongodb_user import User
 
-class UserManager:
+class MongoDBUserManager:
     """Class to handle user-related operations in MongoDB."""
     def __init__(self, mongo_manager: MongoDBManager):
         self.mongo_manager = mongo_manager

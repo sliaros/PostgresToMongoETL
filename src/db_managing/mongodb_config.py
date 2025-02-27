@@ -13,6 +13,7 @@ class MongoDBConfig:
     password: Optional[str] = None
     auth_source: str = "admin"
     auth_mechanism: str = "SCRAM-SHA-256"
+    enable_auth: bool = True  # New flag to control authentication
     logger: Optional[logging.Logger] = None
     application_name: str = "MongoDBManager"
     min_pool_size: int = 5
@@ -45,24 +46,20 @@ class MongoDBConfig:
 
     def get_connection_string(self) -> str:
         """Generate a MongoDB connection string from configuration."""
-        auth_part = f"{self.user}:{self.password}@" if self.user and self.password else ""
+        auth_part = f"{self.user}:{self.password}@" if self.enable_auth and self.user and self.password else ""
         connection_string = f"mongodb://{auth_part}{self.host}:{self.port}/{self.database}"
-
         params = [
-            f"authSource={self.auth_source}" if self.auth_source else None,
-            f"authMechanism={self.auth_mechanism}" if self.auth_mechanism else None,
+            f"authSource={self.auth_source}" if self.enable_auth and self.auth_source else None,
+            f"authMechanism={self.auth_mechanism}" if self.enable_auth and self.auth_mechanism else None,
             f"appName={self.application_name}" if self.application_name else None,
             f"replicaSet={self.replica_set}" if self.replica_set else None,
             f"readPreference={self.read_preference}" if self.read_preference else None,
             "retryWrites=true" if self.retry_writes else None,
             "retryReads=true" if self.retry_reads else None
         ]
-
-        # Filter out None values and join remaining params
         params = [p for p in params if p]
         if params:
             connection_string += "?" + "&".join(params)
-
         return connection_string
 
     def get_client_options(self) -> Dict[str, Any]:

@@ -6,7 +6,9 @@ from pymongo import MongoClient, errors
 from pymongo.database import Database
 from pymongo.collection import Collection
 from contextlib import contextmanager
-from .mongodb_config import MongoDBConfig
+from src.db_managing.mongodb_config import MongoDBConfig
+import src.db_managing.mongodb_user_admin as mongodb_user_admin
+
 
 class MongoDBManager:
     """MongoDB manager class for handling database connections and operations."""
@@ -72,9 +74,14 @@ class MongoDBManager:
         try:
             if self._client:
                 return  # Already connected
-
             # Get connection parameters
-            connection_string = self.config.get_connection_string()
+            else:
+                if not self.config.enable_auth:
+                    connection_string = f"mongodb://{self.config.host}:{self.config.port}"
+                    self._logger.info("Connected to MongoDB without authentication")
+                else:
+                    connection_string = self.config.get_connection_string()
+
             client_options = self.config.get_client_options()
 
             # Create the client
@@ -86,10 +93,33 @@ class MongoDBManager:
             # Initialize the database
             self._db = self._client[self.config.database]
 
+            # If authentication is enabled but no admin user exists, create one
+            if self.config.enable_auth and not mongodb_user_admin.MongoDBUserAdmin(self).user_exists(
+                    self.config.user, self.config.auth_source):
+                self._mongo_user_admin = mongodb_user_admin.MongoDBUserAdmin(self)
+
+                self._mongo_user_admin.manage_user(
+                    username=self.config.user,
+                    password=self.config.password,
+                    roles=[{"role": "root", "db": "admin"}],
+                    database_name=self.config.auth_source,
+                    action="create"
+                )
+
             self._logger.info(
                 f"Connected to MongoDB: {self.config.database} on {self.config.host}:{self.config.port}"
             )
+
+        except (errors.OperationFailure,errors.ConfigurationError) as e:
+            if isinstance(e, errors.OperationFailure) and e.code in (13, 18):  # Authentication/Authorization failures
+                self._logger.warning(f"Database operation failed(Code {e.code}: {e.details}. Attempting to connect without authentication...")
+            else:
+                self._logger.warning("Authentication failed. Attempting to connect without authentication...")
+                self.config.enable_auth = False  # Disable authentication temporarily
+                self._connect()  # Retry connection without authentication
+
         except Exception as e:
+            print(type(e)==errors.ConfigurationError)
             self._logger.error(f"Failed to connect to MongoDB: {str(e)}")
             # Clean up any partial connection
             if self._client:
