@@ -146,6 +146,9 @@ class Orchestrator:
             self,
     ):
         users = self._user_manager.list_users()
+        if not users:
+            print("No users found")
+            return
         for user in users:
             print(f"User: {user.username}, Role: {user.role}, Permissions: {user.permissions}")
 
@@ -154,7 +157,13 @@ class Orchestrator:
             username: str,
             email: str,
             role: str,
-            permissions: List[str],
-            password: str
+            password: str,
+            metadata: Dict[str, Any] = None
     ):
-        self._user_manager.create_user(username, email, role, permissions, password)
+        try:
+            self._user_manager.create_user(username, email, role, password, metadata)
+        except Exception as e:
+            self._logger.error(f"Error creating user: {str(e)}")
+            raise
+        finally:
+            self._user_manager.authenticate_user(username, password)

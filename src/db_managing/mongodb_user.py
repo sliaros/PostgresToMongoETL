@@ -3,21 +3,6 @@ from typing import Optional, Dict, Any, List
 import bcrypt
 from bson import ObjectId
 
-# Define role permissions as a constant
-ROLE_PERMISSIONS = {
-    "superadmin": ["readWriteAnyDatabase", "userAdminAnyDatabase", "dbAdminAnyDatabase"],
-    "admin": ["readWrite", "userAdmin"],
-    "dataengineer": ["readWrite", "dbAdmin"],
-    "energyanalyst": ["read"],
-    "viewer": ["read"],
-    "sensormanager": ["readWrite"],
-    "facilitymanager": ["readWrite"],
-    "auditor": ["read"],
-    "mlmodeltrainer": ["read", "write"],
-    "apiclient": ["readWrite"],
-}
-
-
 @dataclass
 class User:
     """Dataclass to represent an application user in the MongoDB database."""
@@ -29,6 +14,20 @@ class User:
     metadata: Dict[str, Any] = field(default_factory=dict)
     _id: Optional[str] = None
     permissions: List[str] = field(default_factory=list)
+
+    # Define role permissions as a constant
+    ROLE_PERMISSIONS = {
+        "superadmin": ["readWriteAnyDatabase", "userAdminAnyDatabase", "dbAdminAnyDatabase"],
+        "admin": ["readWrite", "userAdmin"],
+        "dataengineer": ["readWrite", "dbAdmin"],
+        "energyanalyst": ["read"],
+        "viewer": ["read"],
+        "sensormanager": ["readWrite"],
+        "facilitymanager": ["readWrite"],
+        "auditor": ["read"],
+        "mlmodeltrainer": ["read", "write"],
+        "apiclient": ["readWrite"],
+    }
 
     @staticmethod
     def hash_password(password: str) -> str:
@@ -58,7 +57,7 @@ class User:
             active=data.get("active", True),
             metadata=data.get("metadata", {}),
             _id=data.get("_id"),
-            permissions=data.get("permissions", ROLE_PERMISSIONS.get(data["role"], []))
+            permissions=data.get("permissions", User.ROLE_PERMISSIONS.get(data["role"], []))
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -85,9 +84,9 @@ class User:
             raise ValueError("Username cannot be empty")
         if not self.email:
             raise ValueError("Email cannot be empty")
-        if self.role not in ROLE_PERMISSIONS:
+        if self.role not in User.ROLE_PERMISSIONS:
             raise ValueError(f"Invalid role: {self.role}")
 
         # Set permissions based on role if not already set
         if not self.permissions:
-            self.permissions = ROLE_PERMISSIONS[self.role]
+            self.permissions = User.ROLE_PERMISSIONS[self.role]

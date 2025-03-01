@@ -57,9 +57,6 @@ class MongoDBUserManager:
         Raises:
             ValueError: If username already exists or role is invalid
         """
-        if role not in User.ROLE_PERMISSIONS:
-            raise ValueError(f"Invalid role: {role}")
-
         try:
             if self.user_exists(username):
                 raise ValueError(f"User with username '{username}' already exists")
@@ -201,16 +198,15 @@ class MongoDBUserManager:
         Returns:
             bool: True if update succeeded, False otherwise
         """
-        from src.db_managing.mongodb_user import ROLE_PERMISSIONS
 
-        if new_role not in ROLE_PERMISSIONS:
+        if new_role not in User.ROLE_PERMISSIONS:
             raise ValueError(f"Invalid role: {new_role}")
 
         return self.update_user(
             username,
             {
                 "role": new_role,
-                "permissions": ROLE_PERMISSIONS[new_role]
+                "permissions": User.ROLE_PERMISSIONS[new_role]
             }
         )
 

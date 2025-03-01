@@ -40,6 +40,15 @@ mongo_db_database_config:
     host: "localhost"
     port: 27017
     database: "default_db"
+  test_mongo_db:
+    host: "localhost"
+    port: 27017
+    database: "myapp"
+    enable_auth: True
+    user: "admin"
+    password: "admin"
+    auth_source: "admin"
+    auto_create_admin_user: False
 
 mong_db_user:
   admin:
