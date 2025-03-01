@@ -1,7 +1,9 @@
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 import bcrypt
+from bson import ObjectId
 
+# Define role permissions as a constant
 ROLE_PERMISSIONS = {
     "superadmin": ["readWriteAnyDatabase", "userAdminAnyDatabase", "dbAdminAnyDatabase"],
     "admin": ["readWrite", "userAdmin"],
@@ -15,16 +17,18 @@ ROLE_PERMISSIONS = {
     "apiclient": ["readWrite"],
 }
 
+
 @dataclass
 class User:
-    """Dataclass to represent a user in the MongoDB database."""
+    """Dataclass to represent an application user in the MongoDB database."""
     username: str
     email: str
     role: str
     hashed_password: str
-    active: bool = True  # Fixed: Removed trailing comma
+    active: bool = True
     metadata: Dict[str, Any] = field(default_factory=dict)
     _id: Optional[str] = None
+    permissions: List[str] = field(default_factory=list)
 
     @staticmethod
     def hash_password(password: str) -> str:
@@ -37,8 +41,15 @@ class User:
         return bcrypt.checkpw(password.encode(), hashed_password.encode())
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "User":
+    def from_dict(cls, data: Dict[str, Any]) -> Optional["User"]:
         """Create a User instance from a dictionary."""
+        if not data:
+            return None
+
+        # Convert ObjectId to string if present
+        if "_id" in data and isinstance(data["_id"], ObjectId):
+            data["_id"] = str(data["_id"])
+
         return cls(
             username=data["username"],
             email=data["email"],
@@ -46,20 +57,27 @@ class User:
             hashed_password=data["hashed_password"],
             active=data.get("active", True),
             metadata=data.get("metadata", {}),
-            _id=data.get("_id")
+            _id=data.get("_id"),
+            permissions=data.get("permissions", ROLE_PERMISSIONS.get(data["role"], []))
         )
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert a User instance into a dictionary."""
-        return {
+        user_dict = {
             "username": self.username,
             "email": self.email,
             "role": self.role,
             "hashed_password": self.hashed_password,
             "active": self.active,
             "metadata": self.metadata,
-            "_id": self._id
+            "permissions": self.permissions
         }
+
+        # Only include _id if it exists
+        if self._id:
+            user_dict["_id"] = self._id
+
+        return user_dict
 
     def __post_init__(self):
         """Validate the user data after initialization."""
@@ -69,4 +87,7 @@ class User:
             raise ValueError("Email cannot be empty")
         if self.role not in ROLE_PERMISSIONS:
             raise ValueError(f"Invalid role: {self.role}")
-        self.permissions = ROLE_PERMISSIONS[self.role]
+
+        # Set permissions based on role if not already set
+        if not self.permissions:
+            self.permissions = ROLE_PERMISSIONS[self.role]

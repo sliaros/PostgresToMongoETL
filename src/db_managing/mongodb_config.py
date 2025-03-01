@@ -13,7 +13,8 @@ class MongoDBConfig:
     password: Optional[str] = None
     auth_source: str = "admin"
     auth_mechanism: str = "SCRAM-SHA-256"
-    enable_auth: bool = True  # New flag to control authentication
+    enable_auth: bool = True
+    auto_create_admin_user: bool = True
     logger: Optional[logging.Logger] = None
     application_name: str = "MongoDBManager"
     min_pool_size: int = 5

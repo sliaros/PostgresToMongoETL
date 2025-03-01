@@ -165,7 +165,7 @@ class ConfigManager:
             - The "default_database" key is required for specifying the default database.
             - The "project_data" key is required for specifying the data used in the project.
         """
-        required_keys = ["postgre_database", "mongo_db_database", "project_data", "ssl"]
+        required_keys = ["postgres_database", "mongo_db_database_config", "project_data", "ssl"]
         try:
             for key in required_keys:
                 # Attempt to access the configuration value using the provided key.

@@ -4,43 +4,58 @@ import logging
 from typing import Dict, Any, List
 from src.db_managing.mongodb_manager import MongoDBManager, MongoDBConfig
 from src.db_managing.mongodb_user_manager import MongoDBUserManager
-from src.db_managing.mongodb_user_admin import MongoDBUserAdmin
 
 class Orchestrator:
 
     def __init__(self, database_name:str = None):
 
         """Initializes the Orchestrator with configurations from ConfigManager."""
-        self.config_manager = ConfigManager(
+        self._config_manager = ConfigManager(
             ["project_structure_config.yaml", "app_config.yaml"],
         "./config")
-        self.config = self.config_manager.config  # Store config for easy access
-        self.config_manager.validate_config()
+        self._config = self._config_manager.config
+        self._config_manager.validate_config()
         self.create_folder_structure()
-
         self._logger = logging.getLogger(self.__class__.__name__)
-
         self._logger.info("Orchestrator started")
 
         if not database_name:
-            self._logger.info("No database selected, skipping MongoDB initialization")
-            raise ValueError("No database selected")
+            self._logger.info("No database selected, skipping to Default MongoDB initialization")
+            database_config_dict = self._config.get("mongo_db_database_config").get("default_mongo_db")
+        else:
+            database_config_dict = self._config.get("mongo_db_database_config").get(database_name)
 
-        self._mongo_db_config = MongoDBConfig(**self.config.get(database_name))
+        self._mongo_db_config = MongoDBConfig(**database_config_dict)
         self._mongo_db_manager = MongoDBManager(self._mongo_db_config)
-        self._mongo_user_manager = MongoDBUserManager(self._mongo_db_manager)
-        self._mongo_user_admin = MongoDBUserAdmin(self._mongo_db_manager)
+        self._db = self._mongo_db_manager.get_database(database_name)
+        self._user_manager = self._mongo_db_manager.get_user_manager()
+
+    @property
+    def get_config(self):
+        return self._config
+
+    @property
+    def get_db_manager(self):
+        return self._mongo_db_manager
+
+    @property
+    def get_db(self):
+        return self._db
+
+    @property
+    def get_user_manager(self):
+        return self._user_manager
 
     def load_config(self, config_files=None):
         """Reloads the configuration if needed."""
         if config_files is None:
             config_files = []
-        self.config_manager._load_configs(config_files)
-        self.config_manager.validate_config()
+        self._config_manager._load_configs(config_files)
+        self._config_manager.validate_config()
         self._logger.info("Configuration reloaded successfully")
 
     def create_folder_structure(self):
-        FileUtils.create_directories_from_yaml(self.config.get("project_structure", {}))
+        FileUtils.create_directories_from_yaml(self._config.get("project_structure", {}))
 
     def _load_config(self) -> Dict[str, Any]:
         """Load configuration from YAML file"""
@@ -114,3 +129,32 @@ class Orchestrator:
         except Exception as e:
             self._logger.error(f"Error during cleanup: {str(e)}")
             raise Exception(f"Cleanup failed: {str(e)}")
+
+    def create_mongo_config(self, configuration_dict: Dict[str, Any]) -> MongoDBConfig:
+        """Create a MongoDB configuration for the example."""
+        return MongoDBConfig(**configuration_dict)
+
+    def create_mongo_user_manager(self, mongo_db_manager: MongoDBManager) -> MongoDBUserManager:
+        """Initialize the MongoDB user manager with the provided MongoDB manager."""
+        return MongoDBUserManager(mongo_db_manager)
+
+    def initialize_mongo_db_manager(self, mongo_db_config: MongoDBConfig) -> MongoDBManager:
+        """Initialize the MongoDB manager with the provided configuration."""
+        return MongoDBManager(mongo_db_config)
+
+    def list_users(
+            self,
+    ):
+        users = self._user_manager.list_users()
+        for user in users:
+            print(f"User: {user.username}, Role: {user.role}, Permissions: {user.permissions}")
+
+    def create_user(
+            self,
+            username: str,
+            email: str,
+            role: str,
+            permissions: List[str],
+            password: str
+    ):
+        self._user_manager.create_user(username, email, role, permissions, password)

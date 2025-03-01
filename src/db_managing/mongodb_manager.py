@@ -7,7 +7,7 @@ from pymongo.database import Database
 from pymongo.collection import Collection
 from contextlib import contextmanager
 from src.db_managing.mongodb_config import MongoDBConfig
-import src.db_managing.mongodb_user_admin as mongodb_user_admin
+from src.db_managing.mongodb_user_admin import MongoDBUserAdmin
 
 
 class MongoDBManager:
@@ -48,7 +48,7 @@ class MongoDBManager:
         self._initialized = False
 
         # Initialize connection
-        self._connect()
+        self.get_client()
         self._initialized = True
 
     def _log_retry(self, details):
@@ -73,8 +73,7 @@ class MongoDBManager:
         """Establish connection to MongoDB."""
         try:
             if self._client:
-                return  # Already connected
-            # Get connection parameters
+                return
             else:
                 if not self.config.enable_auth:
                     connection_string = f"mongodb://{self.config.host}:{self.config.port}"
@@ -87,39 +86,32 @@ class MongoDBManager:
             # Create the client
             self._client = MongoClient(connection_string, **client_options)
 
-            # Verify connection with ping
-            self._client.admin.command('ping')
-
-            # Initialize the database
-            self._db = self._client[self.config.database]
-
             # If authentication is enabled but no admin user exists, create one
-            if self.config.enable_auth and not mongodb_user_admin.MongoDBUserAdmin(self).user_exists(
-                    self.config.user, self.config.auth_source):
-                self._mongo_user_admin = mongodb_user_admin.MongoDBUserAdmin(self)
+            if self.config.enable_auth and self.config.auto_create_admin_user:
 
-                self._mongo_user_admin.manage_user(
-                    username=self.config.user,
-                    password=self.config.password,
-                    roles=[{"role": "root", "db": "admin"}],
-                    database_name=self.config.auth_source,
-                    action="create"
-                )
+                user_admin = MongoDBUserAdmin(self)
+                if not user_admin.user_exists(self.config.user, self.config.auth_source):
+                    user_admin.manage_user(
+                        username=self.config.user,
+                        password=self.config.password,
+                        roles=[{"role": "root", "db": "admin"}],
+                        database_name=self.config.auth_source,
+                        action="create"
+                    )
 
             self._logger.info(
                 f"Connected to MongoDB: {self.config.database} on {self.config.host}:{self.config.port}"
             )
 
-        except (errors.OperationFailure,errors.ConfigurationError) as e:
+        except (errors.OperationFailure, errors.ConfigurationError) as e:
             if isinstance(e, errors.OperationFailure) and e.code in (13, 18):  # Authentication/Authorization failures
-                self._logger.warning(f"Database operation failed(Code {e.code}: {e.details}. Attempting to connect without authentication...")
+                self._logger.warning(f"Database operation failed (Code {e.code}: {e.details}. Attempting to connect without authentication...")
             else:
                 self._logger.warning("Authentication failed. Attempting to connect without authentication...")
-                self.config.enable_auth = False  # Disable authentication temporarily
-                self._connect()  # Retry connection without authentication
+            self.config.enable_auth = False  # Disable authentication temporarily
+            self._connect()  # Retry connection without authentication
 
         except Exception as e:
-            print(type(e)==errors.ConfigurationError)
             self._logger.error(f"Failed to connect to MongoDB: {str(e)}")
             # Clean up any partial connection
             if self._client:
@@ -166,6 +158,16 @@ class MongoDBManager:
         """Get a MongoDB collection."""
         db = self.get_database(database_name)
         return db[collection_name]
+
+    def get_user_manager(self):
+        """Get a MongoDBUserManager instance."""
+        from src.db_managing.mongodb_user_manager import MongoDBUserManager
+        return MongoDBUserManager(self)
+
+    def get_user_admin(self):
+        """Get a MongoDBUserAdmin instance for managing database-level users."""
+        from src.db_managing.mongodb_user_admin import MongoDBUserAdmin
+        return MongoDBUserAdmin(self)
 
     @contextmanager
     def session(self, causal_consistency: bool = True):
