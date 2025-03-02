@@ -130,18 +130,6 @@ class Orchestrator:
             self._logger.error(f"Error during cleanup: {str(e)}")
             raise Exception(f"Cleanup failed: {str(e)}")
 
-    def create_mongo_config(self, configuration_dict: Dict[str, Any]) -> MongoDBConfig:
-        """Create a MongoDB configuration for the example."""
-        return MongoDBConfig(**configuration_dict)
-
-    def create_mongo_user_manager(self, mongo_db_manager: MongoDBManager) -> MongoDBUserManager:
-        """Initialize the MongoDB user manager with the provided MongoDB manager."""
-        return MongoDBUserManager(mongo_db_manager)
-
-    def initialize_mongo_db_manager(self, mongo_db_config: MongoDBConfig) -> MongoDBManager:
-        """Initialize the MongoDB manager with the provided configuration."""
-        return MongoDBManager(mongo_db_config)
-
     def list_users(
             self,
     ):
