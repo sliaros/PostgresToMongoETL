@@ -28,7 +28,8 @@ if __name__ == "__main__":
         return config
 
 
-        def setup_immediate_connection():
+
+    def setup_immediate_connection():
         """Demonstrate initializing Orchestrator with immediate database connection from YAML."""
         print("\n=== Scenario 2 Immediate Connection from YAML ===")
         try:
