@@ -43,7 +43,7 @@ mongo_db_database_config:
   test_mongo_db:
     host: "localhost"
     port: 27017
-    database: "myapp"
+    database: "test"
     enable_auth: True
     user: "admin"
     password: "admin"

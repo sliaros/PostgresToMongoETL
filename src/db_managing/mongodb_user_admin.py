@@ -59,6 +59,7 @@ class MongoDBUserAdmin:
         result = {'success': False, 'created': False, 'updated': False, 'deleted': False}
 
         try:
+            # Check if the user already exists
             user_exists = self.user_exists(username, db_name)
 
             if action == "create":
