@@ -27,7 +27,7 @@ class MongoCRUD:
         """
         self._mongo_manager = mongo_db_manager
         self._logger = mongo_db_manager._logger
-        self._RETRYABLE_ERRORS = mongo_db_manager._RETRYABLE_ERRORS
+        self._RETRYABLE_ERRORS = mongo_db_manager.RETRYABLE_ERRORS
 
     def _log_retry(self, details: Dict[str, Any]) -> None:
         """Log retry attempts for backoff decorator."""
@@ -198,7 +198,7 @@ class MongoReadOperations(MongoCRUD):
                 Matching document or None if not found
 
             Raises:
-                MongoDBCrudError: If find operation fails
+                MongoDBCrudError: If finding operation fails
             """
             try:
                 return self._execute_operation(
@@ -231,7 +231,7 @@ class MongoReadOperations(MongoCRUD):
                 Matching document or None if not found
 
             Raises:
-                MongoDBCrudError: If find operation fails
+                MongoDBCrudError: If finding operation fails
             """
             try:
                 # Ensure document_id is an ObjectId
@@ -274,7 +274,7 @@ class MongoReadOperations(MongoCRUD):
                 Cursor to iterate over matching documents
 
             Raises:
-                MongoDBCrudError: If find operation fails
+                MongoDBCrudError: If finding operation fails
             """
             try:
                 return self._execute_operation(
@@ -336,7 +336,7 @@ class MongoReadOperations(MongoCRUD):
                 Documents matching the query, one at a time
 
             Raises:
-                MongoDBCrudError: If find operation fails
+                MongoDBCrudError: If finding operation fails
             """
             try:
                 cursor = self.read_many(

@@ -1,4 +1,4 @@
-from typing import Optional, Dict, List, Union, Tuple, Any
+from typing import Optional, Any
 import logging
 import threading
 import backoff
@@ -25,7 +25,7 @@ class MongoDBManager:
 
     _instance = None
     _lock = threading.Lock()
-    _RETRYABLE_ERRORS = (
+    RETRYABLE_ERRORS = (
         errors.ConnectionFailure,
         errors.NetworkTimeout,
         errors.ServerSelectionTimeoutError,
@@ -81,7 +81,7 @@ class MongoDBManager:
 
     @backoff.on_exception(
         backoff.expo,
-        _RETRYABLE_ERRORS,
+        RETRYABLE_ERRORS,
         max_tries=3,
         on_backoff=_log_retry,
         giveup=_give_up_handler
@@ -99,7 +99,7 @@ class MongoDBManager:
                     self._client.admin.command('ping')
                     self._logger.debug("Reusing existing MongoDB connection")
                     return
-                except self._RETRYABLE_ERRORS:
+                except self.RETRYABLE_ERRORS:
                     self._logger.info("Existing connection failed ping test. Reconnecting...")
                     self._client.close()
                     self._client = None
@@ -195,7 +195,7 @@ class MongoDBManager:
         else:
             try:
                 self._client.admin.command('ping')
-            except self._RETRYABLE_ERRORS:
+            except self.RETRYABLE_ERRORS:
                 self._logger.warning("Connection lost, reconnecting...")
                 self._client.close()
                 self._client = None
