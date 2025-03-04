@@ -189,6 +189,7 @@ class Orchestrator:
             return
         for user in users:
             print(f"User: {user.username}, Role: {user.role}, Permissions: {user.permissions}")
+        return users
 
     def create_user(
             self,

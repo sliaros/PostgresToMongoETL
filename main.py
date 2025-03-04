@@ -124,6 +124,15 @@ if __name__ == "__main__":
             metadata={"department": "Engineering", "projects": ["ETL Pipeline"]}
         )
 
+    def general_user_management(orchestrator):
+        print("\n=== Scenario 9 Find all users, get one activate/deactivate/change role and then delete all users ===")
+        users = orchestrator.list_users()
+        user = users[0]
+        orchestrator.user_manager.deactivate_user(user)
+        orchestrator.user_manager.activate_user(user)
+        orchestrator.user_manager.update_user_role(user.username, 'admin')
+        orchestrator.user_manager.
+
 def main():
     config = create_mongo_config()
     # orchestrator = setup_immediate_connection()
@@ -133,6 +142,7 @@ def main():
     list_collections(orchestrator)
     list_users(orchestrator)
     create_user(orchestrator)
+    general_user_management(orchestrator)
 
 if __name__ == "__main__":
     main()
