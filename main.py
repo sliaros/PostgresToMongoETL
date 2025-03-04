@@ -28,30 +28,7 @@ if __name__ == "__main__":
         return config
 
 
-    # orch = Orchestrator(database_name="test_mongo_db")
-    # print(orch.config)
-
-    # orch.list_users()
-    #
-    # orch.get_user_manager.delete_user("john_doe")
-    #
-    # orch.create_user(
-    #     username="john_doe",
-    #     email="john@example.com",
-    #     role="dataengineer",
-    #     password="secure password",
-    #     metadata={"department": "Engineering", "projects": ["ETL Pipeline"]}
-    # )
-    #
-    # orch.get_user_manager.deactivate_user("john_doe")
-    #
-    # orch.get_user_manager.activate_user("john_doe")
-    #
-    # orch.get_user_manager.update_user_role("john_doe", "admin")
-    #
-    # orch.cleanup_collections_and_databases()
-
-    def setup_immediate_connection():
+        def setup_immediate_connection():
         """Demonstrate initializing Orchestrator with immediate database connection from YAML."""
         print("\n=== Scenario 2 Immediate Connection from YAML ===")
         try:
@@ -128,10 +105,17 @@ if __name__ == "__main__":
         print("\n=== Scenario 9 Find all users, get one activate/deactivate/change role and then delete all users ===")
         users = orchestrator.list_users()
         user = users[0]
-        orchestrator.user_manager.deactivate_user(user)
-        orchestrator.user_manager.activate_user(user)
+        orchestrator.user_manager.deactivate_user(user.username)
+        orchestrator.user_manager.activate_user(user.username)
         orchestrator.user_manager.update_user_role(user.username, 'admin')
-        orchestrator.user_manager.
+        orchestrator.user_manager.purge_all_users()
+        orchestrator.create_user(username="john_doe",
+        email="john@example.com",
+        role="dataengineer",
+        password="secure password",
+        metadata={"department": "Engineering", "projects": ["ETL Pipeline"]}
+    )
+
 
 def main():
     config = create_mongo_config()

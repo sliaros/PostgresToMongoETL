@@ -283,6 +283,27 @@ class MongoDBUserManager:
             self._logger.error(f"Error deleting user '{username}': {str(e)}")
             raise
 
+    def purge_all_users(self):
+        """
+        Permanently delete all users from the database.
+
+        Returns:
+            int: Number of users deleted
+        """
+        try:
+            result = self.collection.delete_many({})
+            deleted_count = result.deleted_count
+
+            if deleted_count > 0:
+                self._logger.info(f"Purged all users. Total users deleted: {deleted_count}")
+            else:
+                self._logger.warning("No users found to purge")
+
+            return deleted_count
+        except Exception as e:
+            self._logger.error(f"Error purging users: {str(e)}")
+            raise
+
     def ensure_indexes(self):
         """Create necessary indexes on the users collection."""
         try:
