@@ -117,17 +117,49 @@ if __name__ == "__main__":
         metadata={"department": "Engineering", "projects": ["ETL Pipeline"]}
     )
 
+    def translate_postgres_to_mongo():
+        from src.db_managing.postgres_to_mongo_translator import PostgresToMongoTranslator
+        import json
+
+        pg_config = {
+            "dbname": "demo_db",
+            "user": "postgres",
+            "password": "postgres",
+            "host": "localhost",
+            "port": "5432"
+        }
+
+        # MongoDB connection details
+        mongo_config = MongoDBConfig(
+            host="localhost",
+            port=27017,
+            database="example_db",
+            user="poutan",
+            password="guessme",
+            auth_source="admin",
+            application_name="ExampleOrchestration",
+            enable_ssl=False,
+            min_pool_size=3,
+            max_pool_size=10
+        )
+
+        translator = PostgresToMongoTranslator(pg_config, mongo_config)
+        json_schema = translator.get_postgresql_schema_as_json()
+        print(json.dumps(json_schema, indent=4))
+        translator.transfer_data(batch_size=500000)
+
 
 def main():
     config = create_mongo_config()
-    # orchestrator = setup_immediate_connection()
-    # orchestrator =  setup_delayed_connection()
+    orchestrator = setup_immediate_connection()
+    orchestrator =  setup_delayed_connection()
     orchestrator =  setup_delayed_custom_connection(config)
     list_databases(orchestrator)
     list_collections(orchestrator)
     list_users(orchestrator)
     create_user(orchestrator)
     general_user_management(orchestrator)
+    translate_postgres_to_mongo()
 
 if __name__ == "__main__":
     main()
